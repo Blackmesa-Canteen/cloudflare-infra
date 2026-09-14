@@ -81,8 +81,11 @@ anything else, so this one step can't be done by Terraform itself.
 5. **In this repo's GitHub settings**, add:
    - Repository secrets (Settings → Secrets and variables → Actions →
      Repository secrets): `R2_TFSTATE_ACCESS_KEY_ID`,
-     `R2_TFSTATE_SECRET_ACCESS_KEY` (from step 2), `CLOUDFLARE_API_TOKEN`
-     (from step 3).
+     `R2_TFSTATE_SECRET_ACCESS_KEY` (from step 2), `CLOUDFLARE_R2_API_TOKEN`
+     (from step 3) — named for what it's scoped to, not just "the"
+     Cloudflare token; a future stack needing different Cloudflare
+     permissions gets its own equally specific secret name, per "Adding a
+     new stack" below, rather than widening this one.
    - Repository variable: `CLOUDFLARE_ACCOUNT_ID`.
    - An **Environment** named `infra-apply`, with "Required reviewers" set
      to yourself. It holds no secrets of its own — its only job is to make
@@ -111,9 +114,11 @@ dashboard.
 Copy the shape of `stacks/notes-sync/`: its own `providers.tf` (own state
 `key`), its own `variables.tf`/`main.tf`, reusing a module under `modules/`
 if one fits. Give it its own workflow (copy `terraform-notes-sync.yml`,
-change the `working-directory`) and its **own** scoped API token/secret
-rather than widening an existing one — keeps a leaked or misused token
-limited to the one stack it belongs to. Don't add a `paths:` filter to its
+change the `working-directory`) and its **own** scoped API token/secret,
+named for what it's scoped to (e.g. `CLOUDFLARE_R2_API_TOKEN`, not a bare
+`CLOUDFLARE_API_TOKEN`), rather than widening an existing one — keeps a
+leaked or misused token limited to the one stack it belongs to, and keeps
+the name from implying it covers more than it does. Don't add a `paths:` filter to its
 `Plan` trigger if `Plan` is a required check — same reason the notes-sync
 one doesn't have one (a path-filtered required check never reports, so
 never merges, on a PR that doesn't touch that path).
