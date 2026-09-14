@@ -2,14 +2,13 @@ name: Terraform (notes-sync)
 
 on:
   pull_request:
-    paths:
-      - "stacks/notes-sync/**"
-      - "modules/**"
   push:
     branches: [main]
-    paths:
-      - "stacks/notes-sync/**"
-      - "modules/**"
+
+# No `paths:` filter: `Plan` is a required status check on main, and a
+# path-filtered required check never reports (so never merges) on a PR
+# that doesn't touch those paths. Running plan/validate on every PR is
+# cheap enough for one stack; revisit if/when this repo gets many stacks.
 
 permissions:
   contents: read
