@@ -4,6 +4,10 @@ module "notes_sync_bucket" {
   account_id  = var.cloudflare_account_id
   bucket_name = var.bucket_name
 
+  # EU jurisdiction, matching the tfstate bucket. Cannot be changed later
+  # without recreating the bucket (and re-syncing the whole vault).
+  jurisdiction = "eu"
+
   # LiveSync's desktop/mobile clients talk to R2 directly, no browser
   # involved, so CORS stays off. Flip this on (and set
   # cors_allowed_origins) only if a browser-based client is ever added.
