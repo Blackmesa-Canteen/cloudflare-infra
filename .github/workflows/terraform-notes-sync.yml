@@ -49,7 +49,13 @@ jobs:
         working-directory: .
 
       - name: terraform init
-        run: terraform init -input=false
+        run: |
+          cat > backend-config.hcl <<HCL
+          endpoints = {
+            s3 = "https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.eu.r2.cloudflarestorage.com"
+          }
+          HCL
+          terraform init -input=false -backend-config=backend-config.hcl
 
       - name: terraform validate
         run: terraform validate
@@ -95,7 +101,13 @@ jobs:
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
 
       - name: terraform init
-        run: terraform init -input=false
+        run: |
+          cat > backend-config.hcl <<HCL
+          endpoints = {
+            s3 = "https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.eu.r2.cloudflarestorage.com"
+          }
+          HCL
+          terraform init -input=false -backend-config=backend-config.hcl
 
       - name: terraform apply
         run: terraform apply -input=false -auto-approve

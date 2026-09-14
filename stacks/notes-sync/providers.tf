@@ -9,13 +9,17 @@ terraform {
   }
 
   # State lives in a small, dedicated R2 bucket created during the one-time
-  # bootstrap (see README.md "Bootstrap"). The values below are identifiers,
-  # not secrets — replace the two placeholders once, after bootstrap, and
-  # commit the change. Actual credentials come from AWS_ACCESS_KEY_ID /
-  # AWS_SECRET_ACCESS_KEY (an R2 API token pair) in the environment, never
-  # committed here.
+  # bootstrap (see README.md "Bootstrap"). `endpoints.s3` is deliberately
+  # left out here — Terraform's backend block can't reference var.* at all
+  # (it's resolved before the variable system exists), so it can't read
+  # var.cloudflare_account_id directly. Rather than hardcode a second copy
+  # of the account ID here, CI supplies it via -backend-config, generated
+  # from the same CLOUDFLARE_ACCOUNT_ID variable that feeds
+  # var.cloudflare_account_id elsewhere in this stack — one source of
+  # truth. Running `terraform init` locally needs the same flag; see
+  # README.md.
   backend "s3" {
-    bucket                      = "REPLACE_ME_TFSTATE_BUCKET"
+    bucket                      = "tfstate"
     key                         = "notes-sync/terraform.tfstate"
     region                      = "auto"
     skip_credentials_validation = true
@@ -24,10 +28,6 @@ terraform {
     skip_requesting_account_id  = true
     skip_s3_checksum            = true
     use_path_style              = true
-
-    endpoints = {
-      s3 = "https://REPLACE_ME_ACCOUNT_ID.r2.cloudflarestorage.com"
-    }
   }
 }
 
