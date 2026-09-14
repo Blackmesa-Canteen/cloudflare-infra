@@ -10,8 +10,14 @@ variable "bucket_name" {
 
 variable "location" {
   type        = string
-  description = "Optional R2 jurisdiction/location hint (e.g. \"apac\", \"eeur\", \"enam\", \"weur\", \"oc\"). Leave null to let Cloudflare choose."
+  description = "Optional performance/placement hint (\"apac\", \"eeur\", \"enam\", \"weur\", \"wnam\", \"oc\") -- NOT a data-residency guarantee. Leave null to let Cloudflare choose. See jurisdiction for actual data residency."
   default     = null
+}
+
+variable "jurisdiction" {
+  type        = string
+  description = "Legal jurisdiction objects are guaranteed to stay within: \"default\", \"eu\", \"fedramp\", or \"us\". Cannot be changed after creation without recreating the bucket."
+  default     = "default"
 }
 
 variable "abort_incomplete_multipart_upload_days" {

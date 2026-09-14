@@ -1,12 +1,14 @@
 resource "cloudflare_r2_bucket" "this" {
-  account_id = var.account_id
-  name       = var.bucket_name
-  location   = var.location
+  account_id   = var.account_id
+  name         = var.bucket_name
+  location     = var.location
+  jurisdiction = var.jurisdiction
 }
 
 resource "cloudflare_r2_bucket_lifecycle" "this" {
-  account_id  = var.account_id
-  bucket_name = cloudflare_r2_bucket.this.name
+  account_id   = var.account_id
+  bucket_name  = cloudflare_r2_bucket.this.name
+  jurisdiction = var.jurisdiction
 
   rules = [{
     id      = "abort-incomplete-multipart-uploads"
@@ -28,8 +30,9 @@ resource "cloudflare_r2_bucket_lifecycle" "this" {
 resource "cloudflare_r2_bucket_cors" "this" {
   count = var.enable_cors ? 1 : 0
 
-  account_id  = var.account_id
-  bucket_name = cloudflare_r2_bucket.this.name
+  account_id   = var.account_id
+  bucket_name  = cloudflare_r2_bucket.this.name
+  jurisdiction = var.jurisdiction
 
   rules = [{
     allowed = {
