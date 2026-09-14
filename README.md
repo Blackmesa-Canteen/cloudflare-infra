@@ -7,40 +7,21 @@ Currently manages one thing: the R2 bucket used to sync an Obsidian vault
 (via the Self-hosted LiveSync plugin). Laid out so more resources can be
 added as their own stack later without restructuring anything.
 
-This repo is **public** (that's what makes GitHub's branch protection
-possible for free — see below), but nothing sensitive lives in it: account
-IDs/bucket names are identifiers, not credentials, and can't authenticate
-anything on their own; actual Terraform state lives in R2, never in git;
-and real secrets exist only as GitHub Actions secrets, never committed.
+## Security
 
-## Security hardening (public-repo specific)
+Public repo (needed for free GitHub branch protection), but nothing
+sensitive lives in it — IDs aren't credentials, state lives in R2 not git,
+secrets exist only as GitHub Actions secrets.
 
-Beyond branch protection (below), this repo has:
-
-- **`sha_pinning_required` enabled** (Settings → Actions → General) — GitHub
-  refuses to run any workflow step that references a third-party action by
-  a mutable tag/branch instead of a full commit SHA. Every action in
-  `.github/workflows/` is pinned to a SHA with a version comment; Dependabot
-  bumps both together.
-- **Fork PR workflow runs require approval from a maintainer** — set to
-  `all_external_contributors` (the strictest option), not just first-time
-  contributors. An outside PR's workflow doesn't execute at all until
-  manually approved in the Actions tab, which also blocks Actions-minutes
-  abuse and reconnaissance, not just secret access.
-- **Secrets are already unavailable to fork PRs by GitHub's platform
-  default** for `pull_request`-triggered workflows (as opposed to the
-  much more dangerous `pull_request_target`, which this repo does not use
-  anywhere) — a malicious fork PR's `terraform plan` fails on auth rather
-  than getting a real credential to exfiltrate.
-- **Default workflow token permissions are read-only** at the repo level,
-  and each job additionally declares its own minimal `permissions:` (e.g.
-  only the `Plan` job gets `pull-requests: write`, only to post its plan
-  comment; `apply` gets none beyond `contents: read`).
-- **`persist-credentials: false`** on every `actions/checkout` step, so the
-  ephemeral `GITHUB_TOKEN` isn't left sitting in the git config for any
-  later step (or compromised action) to pick up.
-- Branch protection (`enforce_admins: true`) means these rules apply to the
-  repo owner too, not just outside contributors.
+- Branch protection on `main`: PRs required, `Plan` + both `Security` jobs
+  required, force-push/delete disabled, enforced for the owner too.
+- `sha_pinning_required` on — every action pinned to a commit SHA;
+  Dependabot bumps them.
+- Fork PR workflow runs require maintainer approval
+  (`all_external_contributors`).
+- Default workflow token permissions are read-only; each job further scopes
+  its own `permissions:`.
+- `persist-credentials: false` on every checkout step.
 
 ## Layout
 
@@ -99,12 +80,7 @@ anything else, so this one step can't be done by Terraform itself.
      before it ever touches Cloudflare, even though it's triggered
      automatically on merge to `main`.
 
-6. ~~Turn on branch protection for `main`~~ — already configured: PRs
-   required, `Plan` (from `Terraform (notes-sync)`) and both jobs from
-   `Security` required as passing status checks, force-push/delete
-   disabled, enforced for the owner too. Matches the same convention
-   already used in the `my-blog` repo. Nothing to do here unless you want
-   to change it.
+6. ~~Turn on branch protection~~ — already configured, see "Security" above.
 
 After this, everything else — creating the bucket, changing its lifecycle
 rule, adding a future stack — goes through a PR with a visible plan, not the
@@ -124,11 +100,13 @@ dashboard.
 
 Copy the shape of `stacks/notes-sync/`: its own `providers.tf` (own state
 `key`), its own `variables.tf`/`main.tf`, reusing a module under `modules/`
-if one fits. Give it its own workflow (copy
-`terraform-notes-sync.yml`, change the `paths:` filters and the stack's
-`working-directory`) and its **own** scoped API token/secret rather than
-widening an existing one — keeps a leaked or misused token limited to the
-one stack it belongs to.
+if one fits. Give it its own workflow (copy `terraform-notes-sync.yml`,
+change the `working-directory`) and its **own** scoped API token/secret
+rather than widening an existing one — keeps a leaked or misused token
+limited to the one stack it belongs to. Don't add a `paths:` filter to its
+`Plan` trigger if `Plan` is a required check — same reason the notes-sync
+one doesn't have one (a path-filtered required check never reports, so
+never merges, on a PR that doesn't touch that path).
 
 ## Notes-sync bucket — using it with Obsidian
 
