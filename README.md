@@ -7,6 +7,41 @@ Currently manages one thing: the R2 bucket used to sync an Obsidian vault
 (via the Self-hosted LiveSync plugin). Laid out so more resources can be
 added as their own stack later without restructuring anything.
 
+This repo is **public** (that's what makes GitHub's branch protection
+possible for free — see below), but nothing sensitive lives in it: account
+IDs/bucket names are identifiers, not credentials, and can't authenticate
+anything on their own; actual Terraform state lives in R2, never in git;
+and real secrets exist only as GitHub Actions secrets, never committed.
+
+## Security hardening (public-repo specific)
+
+Beyond branch protection (below), this repo has:
+
+- **`sha_pinning_required` enabled** (Settings → Actions → General) — GitHub
+  refuses to run any workflow step that references a third-party action by
+  a mutable tag/branch instead of a full commit SHA. Every action in
+  `.github/workflows/` is pinned to a SHA with a version comment; Dependabot
+  bumps both together.
+- **Fork PR workflow runs require approval from a maintainer** — set to
+  `all_external_contributors` (the strictest option), not just first-time
+  contributors. An outside PR's workflow doesn't execute at all until
+  manually approved in the Actions tab, which also blocks Actions-minutes
+  abuse and reconnaissance, not just secret access.
+- **Secrets are already unavailable to fork PRs by GitHub's platform
+  default** for `pull_request`-triggered workflows (as opposed to the
+  much more dangerous `pull_request_target`, which this repo does not use
+  anywhere) — a malicious fork PR's `terraform plan` fails on auth rather
+  than getting a real credential to exfiltrate.
+- **Default workflow token permissions are read-only** at the repo level,
+  and each job additionally declares its own minimal `permissions:` (e.g.
+  only the `Plan` job gets `pull-requests: write`, only to post its plan
+  comment; `apply` gets none beyond `contents: read`).
+- **`persist-credentials: false`** on every `actions/checkout` step, so the
+  ephemeral `GITHUB_TOKEN` isn't left sitting in the git config for any
+  later step (or compromised action) to pick up.
+- Branch protection (`enforce_admins: true`) means these rules apply to the
+  repo owner too, not just outside contributors.
+
 ## Layout
 
 ```
@@ -64,10 +99,12 @@ anything else, so this one step can't be done by Terraform itself.
      before it ever touches Cloudflare, even though it's triggered
      automatically on merge to `main`.
 
-6. **Turn on branch protection for `main`**: require pull requests, and
-   require the `Plan` job from `Terraform (notes-sync)` and both jobs from
-   `Security` as passing status checks before merge. (Matches the same
-   convention already used in the `996blog` repo.)
+6. ~~Turn on branch protection for `main`~~ — already configured: PRs
+   required, `Plan` (from `Terraform (notes-sync)`) and both jobs from
+   `Security` required as passing status checks, force-push/delete
+   disabled, enforced for the owner too. Matches the same convention
+   already used in the `my-blog` repo. Nothing to do here unless you want
+   to change it.
 
 After this, everything else — creating the bucket, changing its lifecycle
 rule, adding a future stack — goes through a PR with a visible plan, not the

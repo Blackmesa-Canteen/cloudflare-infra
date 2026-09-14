@@ -2,18 +2,16 @@ name: Terraform (notes-sync)
 
 on:
   pull_request:
-    paths:
-      - "stacks/notes-sync/**"
-      - "modules/**"
   push:
     branches: [main]
-    paths:
-      - "stacks/notes-sync/**"
-      - "modules/**"
+
+# No `paths:` filter: `Plan` is a required status check on main, and a
+# path-filtered required check never reports (so never merges) on a PR
+# that doesn't touch those paths. Running plan/validate on every PR is
+# cheap enough for one stack; revisit if/when this repo gets many stacks.
 
 permissions:
   contents: read
-  pull-requests: write
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.R2_TFSTATE_ACCESS_KEY_ID }}
@@ -30,10 +28,21 @@ jobs:
   plan:
     name: Plan
     runs-on: ubuntu-latest
+    # Only this job needs pull-requests:write, to post the plan comment.
+    # Note: for a PR opened from a fork, GitHub does not pass repository
+    # secrets to a `pull_request`-triggered run at all (they evaluate to
+    # empty) — this job fails safe (auth error) rather than leaking
+    # anything, and fork PR runs additionally require manual approval
+    # before they execute (see repo Settings > Actions).
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
 
       - name: terraform fmt
         run: terraform fmt -check -recursive
@@ -52,7 +61,7 @@ jobs:
 
       - name: Comment plan on PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const body = `#### Terraform Plan — notes-sync\n\`\`\`\n${{ steps.plan.outputs.stdout }}\n\`\`\``;
@@ -76,10 +85,14 @@ jobs:
     # Secrets stay at repo level (see env: above) so the plan job on PRs
     # doesn't also require manual approval; only apply does.
     environment: infra-apply
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
 
       - name: terraform init
         run: terraform init -input=false
