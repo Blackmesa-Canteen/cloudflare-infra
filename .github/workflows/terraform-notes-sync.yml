@@ -52,7 +52,7 @@ jobs:
         run: |
           cat > backend-config.hcl <<HCL
           endpoints = {
-            s3 = "https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
+            s3 = "https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.eu.r2.cloudflarestorage.com"
           }
           HCL
           terraform init -input=false -backend-config=backend-config.hcl
@@ -104,7 +104,7 @@ jobs:
         run: |
           cat > backend-config.hcl <<HCL
           endpoints = {
-            s3 = "https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com"
+            s3 = "https://${{ vars.CLOUDFLARE_ACCOUNT_ID }}.eu.r2.cloudflarestorage.com"
           }
           HCL
           terraform init -input=false -backend-config=backend-config.hcl

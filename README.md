@@ -90,9 +90,12 @@ anything else, so this one step can't be done by Terraform itself.
    account ID, CI generates it from the `CLOUDFLARE_ACCOUNT_ID` variable
    (step 5) via `-backend-config` at `terraform init` time. Running
    `terraform init` locally needs the same: create a `backend-config.hcl`
-   (gitignored) with `endpoints = { s3 = "https://<account
-   id>.r2.cloudflarestorage.com" }` and pass
-   `-backend-config=backend-config.hcl`.
+   (gitignored) with
+   `endpoints = { s3 = "https://<account id><jurisdiction>.r2.cloudflarestorage.com" }`
+   and pass `-backend-config=backend-config.hcl`. `<jurisdiction>` is empty
+   for a default-jurisdiction bucket, or e.g. `.eu.`/`.fedramp.` if the
+   `tfstate` bucket was created under a data-residency jurisdiction (ours
+   is `.eu.` — see the workflow file for the exact string in use).
 
 5. **In this repo's GitHub settings**, add:
    - Repository secrets (Settings → Secrets and variables → Actions →
