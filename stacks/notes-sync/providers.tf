@@ -15,7 +15,7 @@ terraform {
   # AWS_SECRET_ACCESS_KEY (an R2 API token pair) in the environment, never
   # committed here.
   backend "s3" {
-    bucket                      = "REPLACE_ME_TFSTATE_BUCKET"
+    bucket                      = "tfstate"
     key                         = "notes-sync/terraform.tfstate"
     region                      = "auto"
     skip_credentials_validation = true
@@ -26,7 +26,7 @@ terraform {
     use_path_style              = true
 
     endpoints = {
-      s3 = "https://REPLACE_ME_ACCOUNT_ID.r2.cloudflarestorage.com"
+      s3 = "https://b5efdc6a06dc7000dc409c2a56d34c2d.r2.cloudflarestorage.com"
     }
   }
 }
