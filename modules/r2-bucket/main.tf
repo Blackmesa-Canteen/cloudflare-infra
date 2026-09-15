@@ -36,7 +36,10 @@ resource "cloudflare_r2_bucket_cors" "this" {
 
   rules = [{
     allowed = {
-      methods = ["GET", "PUT", "DELETE"]
+      # POST is needed alongside PUT/DELETE for multipart uploads
+      # (CreateMultipartUpload/CompleteMultipartUpload use POST; parts
+      # themselves are PUT) -- not just single-shot object writes.
+      methods = ["GET", "PUT", "POST", "DELETE"]
       origins = var.cors_allowed_origins
       headers = ["*"]
     }

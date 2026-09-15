@@ -8,8 +8,16 @@ module "notes_sync_bucket" {
   # without recreating the bucket (and re-syncing the whole vault).
   jurisdiction = "eu"
 
-  # LiveSync's desktop/mobile clients talk to R2 directly, no browser
-  # involved, so CORS stays off. Flip this on (and set
-  # cors_allowed_origins) only if a browser-based client is ever added.
-  enable_cors = false
+  # LiveSync's requests still go through Electron/Capacitor's fetch(),
+  # which enforces CORS like a browser would. Without this, connecting
+  # fails with "Failed to fetch" unless the plugin's non-standard
+  # "Use internal API" workaround is enabled instead. Origins are
+  # LiveSync's fixed app identifiers, not configurable per-user:
+  # desktop, iOS, and Android respectively.
+  enable_cors = true
+  cors_allowed_origins = [
+    "app://obsidian.md",
+    "capacitor://localhost",
+    "http://localhost",
+  ]
 }
